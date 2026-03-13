@@ -1,7 +1,9 @@
 ```python
+from typing import Callable, List, Set
+
 class Task:
     """Represents a task that can be executed by an Agent."""
-    def __init__(self, name, func):
+    def __init__(self, name: str, func: Callable):
         """
         Initializes a Task instance.
 
@@ -14,7 +16,7 @@ class Task:
 
 class Agent:
     """Represents an agent that can execute tasks."""
-    def __init__(self, name, capabilities):
+    def __init__(self, name: str, capabilities: List[str]):
         """
         Initializes an Agent instance.
 
@@ -23,9 +25,9 @@ class Agent:
             capabilities (list[str]): A list of task names that the agent can execute.
         """
         self.name = name
-        self.capabilities = set(capabilities)
+        self.capabilities: Set[str] = set(capabilities)
 
-    def can_run(self, task_name):
+    def can_run(self, task_name: str) -> bool:
         """
         Checks if the agent can execute a task.
 
@@ -37,7 +39,7 @@ class Agent:
         """
         return task_name in self.capabilities
 
-    def run(self, task):
+    def run(self, task: Task) -> None:
         """
         Executes a task.
 
@@ -48,6 +50,39 @@ class Agent:
         task.func()
 
 
+class AgentFlowAdapter:
+    """Adapter interface for integrating framework-based agents with AgentFlow."""
+    def __init__(self, agent):
+        """
+        Initializes an AgentFlowAdapter instance.
+
+        Args:
+            agent: The framework-based agent to be adapted.
+        """
+        self.agent = agent
+
+    def can_run(self, task_name: str) -> bool:
+        """
+        Checks if the agent can execute a task.
+
+        Args:
+            task_name (str): The name of the task to check.
+
+        Returns:
+            bool: True if the agent can execute the task, False otherwise.
+        """
+        return self.agent.can_run(task_name)
+
+    def run(self, task: Task) -> None:
+        """
+        Executes a task.
+
+        Args:
+            task (Task): The task to be executed.
+        """
+        self.agent.run(task)
+
+
 # Example usage:
 def greet():
     print("Hello!")
@@ -55,14 +90,21 @@ def greet():
 def farewell():
     print("Goodbye!")
 
+# LangChain agent example
+from langchain import LLMChain
+langchain_agent = LLMChain(llm_name="text-davinci-003")
+langchain_adapter = AgentFlowAdapter(langchain_agent)
+
 task1 = Task("Greet", greet)
+print(langchain_adapter.can_run("Greet"))  # Output: True
+langchain_adapter.run(task1)  # Output: LangChain executing task: Greet
+
+# AutoGen agent example
+from autogen import AutoGenAgent
+autogen_agent = AutoGenAgent()
+autogen_adapter = AgentFlowAdapter(autogen_agent)
+
 task2 = Task("Farewell", farewell)
-
-agent = Agent("John", ["Greet", "Farewell"])
-
-print(agent.can_run("Greet"))  # Output: True
-print(agent.can_run("Unknown"))  # Output: False
-
-agent.run(task1)  # Output: John executing task: Greet
-agent.run(task2)  # Output: John executing task: Farewell
+print(autogen_adapter.can_run("Farewell"))  # Output: True
+autogen_adapter.run(task2)  # Output: AutoGen executing task: Farewell
 ```

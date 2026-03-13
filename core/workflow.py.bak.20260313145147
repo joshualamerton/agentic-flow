@@ -1,7 +1,4 @@
 ```python
-from abc import ABC, abstractmethod
-from typing import Callable, List
-
 class Task:
     """
     Represents a task in a workflow.
@@ -13,7 +10,7 @@ class Task:
         completed (bool): Whether the task has been completed.
     """
 
-    def __init__(self, name: str, func: Callable, depends_on: List[str] = None):
+    def __init__(self, name: str, func: callable, depends_on: list[str] = None):
         """
         Initializes a new Task instance.
 
@@ -42,7 +39,7 @@ class Workflow:
         """
         self.tasks = {}
 
-    def add_task(self, name: str, func: Callable, depends_on: List[str] = None):
+    def add_task(self, name: str, func: callable, depends_on: list[str] = None):
         """
         Adds a new task to the workflow.
 
@@ -53,7 +50,7 @@ class Workflow:
         """
         self.tasks[name] = Task(name, func, depends_on)
 
-    def get_ready_tasks(self) -> List[Task]:
+    def get_ready_tasks(self) -> list[Task]:
         """
         Returns a list of tasks that are ready to be completed, i.e., all dependencies have been completed.
 
@@ -76,67 +73,9 @@ class Workflow:
             task_name (str): The name of the task to mark as completed.
         """
         self.tasks[task_name].completed = True
+```
 
-
-class AgentAdapter(ABC):
-    """
-    Abstract base class for agent adapters.
-
-    Subclasses must implement the `execute` method.
-    """
-
-    @abstractmethod
-    def execute(self):
-        """
-        Executes the agent.
-
-        Subclasses must implement this method.
-        """
-        pass
-
-
-class LangChainAgentAdapter(AgentAdapter):
-    """
-    Adapter for LangChain agents.
-    """
-
-    def __init__(self, agent):
-        """
-        Initializes a new LangChainAgentAdapter instance.
-
-        Args:
-            agent: The LangChain agent to adapt.
-        """
-        self.agent = agent
-
-    def execute(self):
-        """
-        Executes the LangChain agent.
-        """
-        self.agent.run()
-
-
-class AutoGenAgentAdapter(AgentAdapter):
-    """
-    Adapter for AutoGen agents.
-    """
-
-    def __init__(self, agent):
-        """
-        Initializes a new AutoGenAgentAdapter instance.
-
-        Args:
-            agent: The AutoGen agent to adapt.
-        """
-        self.agent = agent
-
-    def execute(self):
-        """
-        Executes the AutoGen agent.
-        """
-        self.agent.run()
-
-
+```python
 # Example usage:
 def task1():
     print("Task 1 completed")
@@ -162,19 +101,4 @@ workflow.mark_task_complete("task2")
 ready_tasks = workflow.get_ready_tasks()
 for task in ready_tasks:
     print(f"Ready to complete: {task.name}")
-
-
-# Example usage with LangChain agent
-from langchain import LLM
-
-llm = LLM.load("code-davinci-002")
-lang_chain_agent = LangChainAgentAdapter(llm)
-workflow.add_task("lang_chain_task", lang_chain_agent.execute)
-
-
-# Example usage with AutoGen agent
-from autogen import Agent
-
-auto_gen_agent = AutoGenAgentAdapter(Agent())
-workflow.add_task("auto_gen_task", auto_gen_agent.execute)
 ```
