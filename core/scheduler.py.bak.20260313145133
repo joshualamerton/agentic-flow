@@ -14,7 +14,7 @@ class Workflow:
         Args:
             name (str): The name of the task.
         """
-        self.tasks[name] = {"ready": False, "task": None}  # Initialize task as not ready
+        self.tasks[name] = False  # Initialize task as not ready
 
     def ready_tasks(self):
         """
@@ -23,7 +23,7 @@ class Workflow:
         Returns:
             list: A list of task names.
         """
-        return [name for name, task in self.tasks.items() if task["ready"]]
+        return [name for name, ready in self.tasks.items() if ready]
 
     def mark_complete(self, task_name):
         """
@@ -32,19 +32,7 @@ class Workflow:
         Args:
             task_name (str): The name of the task to mark as complete.
         """
-        self.tasks[task_name]["ready"] = True
-
-    def get_task(self, task_name):
-        """
-        Returns the task object.
-
-        Args:
-            task_name (str): The name of the task.
-
-        Returns:
-            dict: The task object.
-        """
-        return self.tasks[task_name]
+        self.tasks[task_name] = True
 
 
 class Agent:
@@ -114,7 +102,7 @@ class Scheduler:
             for task_name in ready_tasks:
                 for agent in self.agents:
                     if agent.can_run(task_name):
-                        task = self.workflow.get_task(task_name)
+                        task = self.workflow.tasks[task_name]  # Get the task object
                         agent.run(task)
                         self.workflow.mark_complete(task_name)
                         progress = True
@@ -123,69 +111,20 @@ class Scheduler:
             if not progress:
                 print("No compatible agent found for remaining ready tasks.")
                 break
+```
 
-
-class AgentFlowAdapter:
-    """
-    Adapter interface for integrating framework-based agents with AgentFlow.
-    """
-
-    def __init__(self, agent):
-        self.agent = agent
-
-    def can_run(self, task_name):
-        """
-        Checks if the agent can run a task.
-
-        Args:
-            task_name (str): The name of the task to check.
-
-        Returns:
-            bool: True if the agent can run the task, False otherwise.
-        """
-        return self.agent.can_run(task_name)
-
-    def run(self, task):
-        """
-        Runs a task.
-
-        Args:
-            task: The task to run.
-        """
-        self.agent.run(task)
-
-
-class LangChainAgentAdapter(AgentFlowAdapter):
-    """
-    Adapter for LangChain agents.
-    """
-
-    def __init__(self, lang_chain_agent):
-        super().__init__(lang_chain_agent)
-
-
-class AutoGenAgentAdapter(AgentFlowAdapter):
-    """
-    Adapter for AutoGen agents.
-    """
-
-    def __init__(self, auto_gen_agent):
-        super().__init__(auto_gen_agent)
-
-
+```python
 # Example usage:
 workflow = Workflow()
 workflow.add_task("task1")
 workflow.add_task("task2")
 
-lang_chain_agent = LangChainAgentAdapter(LangChainAgent())  # Replace LangChainAgent with your actual LangChain agent
-auto_gen_agent = AutoGenAgentAdapter(AutoGenAgent())  # Replace AutoGenAgent with your actual AutoGen agent
+agent1 = Agent("agent1")
+agent2 = Agent("agent2")
 
 scheduler = Scheduler(workflow)
-scheduler.register_agent(lang_chain_agent)
-scheduler.register_agent(auto_gen_agent)
+scheduler.register_agent(agent1)
+scheduler.register_agent(agent2)
 
 scheduler.run()
 ```
-
-Note: You need to replace `LangChainAgent` and `AutoGenAgent` with your actual LangChain and AutoGen agents. This code assumes that you have already implemented the `LangChainAgent` and `AutoGenAgent` classes. The `AgentFlowAdapter` class serves as an adapter interface for integrating framework-based agents with AgentFlow. The `LangChainAgentAdapter` and `AutoGenAgentAdapter` classes are specific adapters for LangChain and AutoGen agents, respectively.

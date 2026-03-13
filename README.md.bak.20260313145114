@@ -1,4 +1,3 @@
-```markdown
 # AgentFlow
 ================
 
@@ -94,9 +93,6 @@ core
   workflow.py
   agent.py
   scheduler.py
-  adapters
-    langchain.py
-    autogen.py
 
 examples
   demo.py
@@ -130,84 +126,7 @@ AgentFlow is currently in the experimental phase. The roadmap consists of the fo
 * Integrate AgentFlow with popular frameworks and libraries
 * Develop a plugin architecture for easy extension and customization
 
-## Adapter Interfaces
----------------------
-
-### LangChain Agent Adapter
-
-The LangChain agent adapter allows developers to integrate LangChain agents with AgentFlow.
-
-```python
-# core/adapters/langchain.py
-
-from typing import Dict, Any
-
-class LangChainAgentAdapter:
-    def __init__(self, agent: Any):
-        self.agent = agent
-
-    def execute(self, task: Dict):
-        # Execute the task using the LangChain agent
-        return self.agent.execute(task)
-```
-
-### AutoGen Agent Adapter
-
-The AutoGen agent adapter allows developers to integrate AutoGen agents with AgentFlow.
-
-```python
-# core/adapters/autogen.py
-
-from typing import Dict, Any
-
-class AutoGenAgentAdapter:
-    def __init__(self, agent: Any):
-        self.agent = agent
-
-    def execute(self, task: Dict):
-        # Execute the task using the AutoGen agent
-        return self.agent.execute(task)
-```
-
-## Example Usage
-----------------
-
-```python
-# examples/demo.py
-
-from agentflow.core import Workflow
-from agentflow.core.adapters import LangChainAgentAdapter, AutoGenAgentAdapter
-
-# Create a LangChain agent
-langchain_agent = LangChainAgentAdapter(
-    # Initialize the LangChain agent
-    agent=LangChainAgent()
-)
-
-# Create an AutoGen agent
-autogen_agent = AutoGenAgentAdapter(
-    # Initialize the AutoGen agent
-    agent=AutoGenAgent()
-)
-
-# Define a workflow with dependent tasks
-workflow = Workflow(
-    tasks=[
-        {"name": "task1", "dependencies": []},
-        {"name": "task2", "dependencies": ["task1"]},
-    ],
-    agents={
-        "langchain": langchain_agent,
-        "autogen": autogen_agent,
-    },
-)
-
-# Execute the workflow
-workflow.execute()
-```
-
 ## License
 -------
 
 AgentFlow is licensed under the Apache 2.0 license.
-```
