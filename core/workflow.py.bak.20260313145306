@@ -1,6 +1,4 @@
 ```python
-import queue
-import threading
 from abc import ABC, abstractmethod
 from typing import Callable, List
 
@@ -13,7 +11,6 @@ class Task:
         func (callable): The function to be executed when the task is completed.
         depends_on (list[str], optional): The names of tasks that must be completed before this task. Defaults to an empty list.
         completed (bool): Whether the task has been completed.
-        queue (queue.Queue): The queue to put the task result into.
     """
 
     def __init__(self, name: str, func: Callable, depends_on: List[str] = None):
@@ -29,14 +26,6 @@ class Task:
         self.func = func
         self.depends_on = depends_on or []
         self.completed = False
-        self.queue = queue.Queue()
-
-    def execute(self):
-        """
-        Executes the task and puts the result into the queue.
-        """
-        self.func()
-        self.queue.put("Task {} completed".format(self.name))
 
 
 class Workflow:
@@ -45,7 +34,6 @@ class Workflow:
 
     Attributes:
         tasks (dict[str, Task]): A dictionary of tasks in the workflow, keyed by task name.
-        scheduler (threading.Thread): The scheduler thread.
     """
 
     def __init__(self):
@@ -53,7 +41,6 @@ class Workflow:
         Initializes a new Workflow instance.
         """
         self.tasks = {}
-        self.scheduler = threading.Thread(target=self.scheduler_loop)
 
     def add_task(self, name: str, func: Callable, depends_on: List[str] = None):
         """
@@ -89,28 +76,6 @@ class Workflow:
             task_name (str): The name of the task to mark as completed.
         """
         self.tasks[task_name].completed = True
-
-    def scheduler_loop(self):
-        """
-        The scheduler loop. It runs in a separate thread and executes tasks that are ready to be completed.
-        """
-        while True:
-            ready_tasks = self.get_ready_tasks()
-            for task in ready_tasks:
-                task.execute()
-            threading.sleep(1)  # sleep for 1 second
-
-    def start_scheduler(self):
-        """
-        Starts the scheduler thread.
-        """
-        self.scheduler.start()
-
-    def join_scheduler(self):
-        """
-        Joins the scheduler thread.
-        """
-        self.scheduler.join()
 
 
 class AgentAdapter(ABC):
@@ -187,8 +152,6 @@ workflow.add_task("task1", task1)
 workflow.add_task("task2", task2, ["task1"])
 workflow.add_task("task3", task3, ["task1", "task2"])
 
-workflow.start_scheduler()
-
 ready_tasks = workflow.get_ready_tasks()
 for task in ready_tasks:
     print(f"Ready to complete: {task.name}")
@@ -200,6 +163,7 @@ ready_tasks = workflow.get_ready_tasks()
 for task in ready_tasks:
     print(f"Ready to complete: {task.name}")
 
+
 # Example usage with LangChain agent
 from langchain import LLM
 
@@ -207,12 +171,10 @@ llm = LLM.load("code-davinci-002")
 lang_chain_agent = LangChainAgentAdapter(llm)
 workflow.add_task("lang_chain_task", lang_chain_agent.execute)
 
+
 # Example usage with AutoGen agent
 from autogen import Agent
 
 auto_gen_agent = AutoGenAgentAdapter(Agent())
 workflow.add_task("auto_gen_task", auto_gen_agent.execute)
-
-# Wait for the scheduler to finish
-workflow.join_scheduler()
 ```

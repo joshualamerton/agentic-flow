@@ -1,8 +1,5 @@
 ```python
 from typing import Callable, List, Set
-from queue import Queue
-import threading
-import time
 
 class Task:
     """Represents a task that can be executed by an Agent."""
@@ -53,67 +50,6 @@ class Agent:
         task.func()
 
 
-class DistributedScheduler:
-    """A queue-backed scheduler for distributed task execution."""
-    def __init__(self):
-        """
-        Initializes a DistributedScheduler instance.
-        """
-        self.task_queue = Queue()
-        self.heartbeat_interval = 1  # seconds
-        self.heartbeat_timeout = 5  # seconds
-        self.agents = []
-
-    def add_agent(self, agent: Agent):
-        """
-        Adds an agent to the scheduler.
-
-        Args:
-            agent (Agent): The agent to be added.
-        """
-        self.agents.append(agent)
-
-    def submit_task(self, task: Task):
-        """
-        Submits a task to the scheduler.
-
-        Args:
-            task (Task): The task to be submitted.
-        """
-        self.task_queue.put(task)
-
-    def start(self):
-        """
-        Starts the scheduler.
-        """
-        threading.Thread(target=self._heartbeat).start()
-        while True:
-            task = self.task_queue.get()
-            self._assign_task(task)
-
-    def _heartbeat(self):
-        """
-        Sends heartbeats to agents.
-        """
-        while True:
-            for agent in self.agents:
-                agent.heartbeat()
-            time.sleep(self.heartbeat_interval)
-
-    def _assign_task(self, task: Task):
-        """
-        Assigns a task to an available agent.
-
-        Args:
-            task (Task): The task to be assigned.
-        """
-        for agent in self.agents:
-            if agent.can_run(task.name):
-                agent.run(task)
-                return
-        print(f"No agent available to run task: {task.name}")
-
-
 class AgentFlowAdapter:
     """Adapter interface for integrating framework-based agents with AgentFlow."""
     def __init__(self, agent):
@@ -147,28 +83,6 @@ class AgentFlowAdapter:
         self.agent.run(task)
 
 
-class AgentWithHeartbeat(Agent):
-    """An agent that sends heartbeats to the scheduler."""
-    def __init__(self, name: str, capabilities: List[str]):
-        """
-        Initializes an AgentWithHeartbeat instance.
-
-        Args:
-            name (str): The name of the agent.
-            capabilities (list[str]): A list of task names that the agent can execute.
-        """
-        super().__init__(name, capabilities)
-        self.last_heartbeat = time.time()
-
-    def heartbeat(self):
-        """
-        Sends a heartbeat to the scheduler.
-        """
-        if time.time() - self.last_heartbeat > self.heartbeat_timeout:
-            print(f"{self.name} is alive")
-            self.last_heartbeat = time.time()
-
-
 # Example usage:
 def greet():
     print("Hello!")
@@ -188,18 +102,9 @@ langchain_adapter.run(task1)  # Output: LangChain executing task: Greet
 # AutoGen agent example
 from autogen import AutoGenAgent
 autogen_agent = AutoGenAgent()
-autogen_agent = AgentWithHeartbeat("AutoGen", autogen_agent.capabilities)
 autogen_adapter = AgentFlowAdapter(autogen_agent)
 
 task2 = Task("Farewell", farewell)
 print(autogen_adapter.can_run("Farewell"))  # Output: True
 autogen_adapter.run(task2)  # Output: AutoGen executing task: Farewell
-
-# Distributed scheduler example
-scheduler = DistributedScheduler()
-scheduler.add_agent(langchain_agent)
-scheduler.add_agent(autogen_agent)
-scheduler.submit_task(task1)
-scheduler.submit_task(task2)
-scheduler.start()
 ```

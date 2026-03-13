@@ -1,8 +1,4 @@
 ```python
-import queue
-import threading
-import time
-
 class Workflow:
     """
     Represents a workflow with tasks that can be marked as ready or complete.
@@ -10,7 +6,6 @@ class Workflow:
 
     def __init__(self):
         self.tasks = {}
-        self.task_queue = queue.Queue()
 
     def add_task(self, name):
         """
@@ -51,24 +46,6 @@ class Workflow:
         """
         return self.tasks[task_name]
 
-    def submit_task(self, task_name):
-        """
-        Submits a task to the task queue.
-
-        Args:
-            task_name (str): The name of the task to submit.
-        """
-        self.task_queue.put(task_name)
-
-    def get_task_from_queue(self):
-        """
-        Returns a task from the task queue.
-
-        Returns:
-            str: The name of the task.
-        """
-        return self.task_queue.get()
-
 
 class Agent:
     """
@@ -77,7 +54,6 @@ class Agent:
 
     def __init__(self, name):
         self.name = name
-        self.lock = threading.Lock()
 
     def can_run(self, task_name):
         """
@@ -102,17 +78,10 @@ class Agent:
         # TO DO: Implement agent-specific logic to run a task
         pass
 
-    def heartbeat(self):
-        """
-        Sends a heartbeat signal to the scheduler.
-        """
-        with self.lock:
-            print(f"Agent {self.name} is alive")
-
 
 class Scheduler:
     """
-    Schedules tasks to be executed by registered agents in a distributed manner.
+    Schedules tasks to be executed by registered agents.
 
     Args:
         workflow (Workflow): The workflow to schedule tasks for.
@@ -121,7 +90,6 @@ class Scheduler:
     def __init__(self, workflow):
         self.workflow = workflow
         self.agents = []
-        self.stopped = threading.Event()
 
     def register_agent(self, agent):
         """
@@ -132,45 +100,29 @@ class Scheduler:
         """
         self.agents.append(agent)
 
-    def worker(self, agent):
-        """
-        Worker function that runs tasks assigned to the agent.
-
-        Args:
-            agent (Agent): The agent to run tasks for.
-        """
-        while not self.stopped.is_set():
-            task_name = self.workflow.get_task_from_queue()
-            if task_name:
-                if agent.can_run(task_name):
-                    task = self.workflow.get_task(task_name)
-                    agent.run(task)
-                    self.workflow.mark_complete(task_name)
-                agent.heartbeat()
-            else:
-                time.sleep(1)
-
     def run(self):
         """
-        Runs the scheduler in a distributed manner.
+        Runs the scheduler until all tasks are complete.
         """
-        threads = []
-        for agent in self.agents:
-            thread = threading.Thread(target=self.worker, args=(agent,))
-            thread.start()
-            threads.append(thread)
-
         while True:
             ready_tasks = self.workflow.ready_tasks()
             if not ready_tasks:
                 break
 
-            for task_name in ready_tasks:
-                self.workflow.submit_task(task_name)
+            progress = False
 
-        self.stopped.set()
-        for thread in threads:
-            thread.join()
+            for task_name in ready_tasks:
+                for agent in self.agents:
+                    if agent.can_run(task_name):
+                        task = self.workflow.get_task(task_name)
+                        agent.run(task)
+                        self.workflow.mark_complete(task_name)
+                        progress = True
+                        break
+
+            if not progress:
+                print("No compatible agent found for remaining ready tasks.")
+                break
 
 
 class AgentFlowAdapter:
@@ -235,3 +187,5 @@ scheduler.register_agent(auto_gen_agent)
 
 scheduler.run()
 ```
+
+Note: You need to replace `LangChainAgent` and `AutoGenAgent` with your actual LangChain and AutoGen agents. This code assumes that you have already implemented the `LangChainAgent` and `AutoGenAgent` classes. The `AgentFlowAdapter` class serves as an adapter interface for integrating framework-based agents with AgentFlow. The `LangChainAgentAdapter` and `AutoGenAgentAdapter` classes are specific adapters for LangChain and AutoGen agents, respectively.
