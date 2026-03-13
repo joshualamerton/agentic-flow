@@ -97,10 +97,6 @@ core
   adapters
     langchain.py
     autogen.py
-    distributed.py
-  queue.py
-  heartbeat.py
-  leasing.py
 
 examples
   demo.py
@@ -173,36 +169,6 @@ class AutoGenAgentAdapter:
         return self.agent.execute(task)
 ```
 
-### Distributed Agent Adapter
-
-The Distributed agent adapter allows developers to integrate distributed agents with AgentFlow.
-
-```python
-# core/adapters/distributed.py
-
-from typing import Dict, Any
-
-class DistributedAgentAdapter:
-    def __init__(self, agent: Any, queue: Any, heartbeat: Any, leasing: Any):
-        self.agent = agent
-        self.queue = queue
-        self.heartbeat = heartbeat
-        self.leasing = leasing
-
-    def execute(self, task: Dict):
-        # Execute the task using the distributed agent
-        return self.agent.execute(task)
-```
-
-## Distributed Execution
------------------------
-
-AgentFlow supports distributed task execution across multiple workers or machines. The distributed execution system consists of the following components:
-
-* **Task Queue**: A queue-backed scheduler that assigns tasks to workers.
-* **Worker Heartbeats**: A system that tracks worker heartbeats and detects worker failures.
-* **Task Leasing**: A system that tracks task leasing and reassignment.
-
 ## Example Usage
 ----------------
 
@@ -210,10 +176,7 @@ AgentFlow supports distributed task execution across multiple workers or machine
 # examples/demo.py
 
 from agentflow.core import Workflow
-from agentflow.core.adapters import LangChainAgentAdapter, AutoGenAgentAdapter, DistributedAgentAdapter
-from agentflow.core.queue import TaskQueue
-from agentflow.core.heartbeat import WorkerHeartbeat
-from agentflow.core.leasing import TaskLeasing
+from agentflow.core.adapters import LangChainAgentAdapter, AutoGenAgentAdapter
 
 # Create a LangChain agent
 langchain_agent = LangChainAgentAdapter(
@@ -227,15 +190,6 @@ autogen_agent = AutoGenAgentAdapter(
     agent=AutoGenAgent()
 )
 
-# Create a distributed agent
-distributed_agent = DistributedAgentAdapter(
-    # Initialize the distributed agent
-    agent=DistributedAgent(),
-    queue=TaskQueue(),
-    heartbeat=WorkerHeartbeat(),
-    leasing=TaskLeasing(),
-)
-
 # Define a workflow with dependent tasks
 workflow = Workflow(
     tasks=[
@@ -245,7 +199,6 @@ workflow = Workflow(
     agents={
         "langchain": langchain_agent,
         "autogen": autogen_agent,
-        "distributed": distributed_agent,
     },
 )
 
